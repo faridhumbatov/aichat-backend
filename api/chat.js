@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // 1. CORS İcazələri
+  // 1. CORS İcazələri (Brauzer xətalarının qarşısını alır)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -9,48 +9,47 @@ export default async function handler(req, res) {
   const { message } = req.body;
 
   try {
-    // YENİ URL: router.huggingface.co istifadə edirik
-    // Model: Meta Llama 3.2 3B Instruct (Daha yüngül və sürətlidir)
-    const API_URL = "https://router.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct";
+    // SEÇİLƏN MODEL: Qwen 2.5 (Çox güclüdür və lisenziya təsdiqi tələb etmir)
+    // Bu URL standartdır və pulsuz hesablarla işləyir.
+    const API_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct";
     
     const response = await fetch(API_URL, {
       headers: { 
-        "Authorization": `Bearer ${process.env.HF_TOKEN}`, // Token mütləq olmalıdır
+        "Authorization": `Bearer ${process.env.HF_TOKEN}`,
         "Content-Type": "application/json" 
       },
       method: "POST",
       body: JSON.stringify({
         inputs: message,
         parameters: { 
-          max_new_tokens: 500,
+          max_new_tokens: 500, // Cavabın uzunluğu
           return_full_text: false 
         },
         options: { 
-          wait_for_model: true, // Model soyuqdursa gözləsin
-          use_cache: false 
+          wait_for_model: true // Model yatıbsa oyanmasını gözləyir
         }
       }),
     });
 
-    // Əgər API-dən xəta gəlsə, onu mətn kimi oxuyub ekrana verək
+    // Əgər API xəta qaytarsa (məsələn 404 və ya 500)
     if (!response.ok) {
         const errorText = await response.text();
-        return res.status(response.status).json({ error: `HF Xətası (${response.status}): ${errorText}` });
+        return res.status(response.status).json({ error: `API Xətası (${response.status}): ${errorText}` });
     }
 
     const data = await response.json();
 
-    // Cavab formatını yoxlayıb götürürük
+    // Cavabı təmizləyib götürürük
     let aiReply = "";
     if (Array.isArray(data) && data[0].generated_text) {
         aiReply = data[0].generated_text;
     } else if (data.generated_text) {
         aiReply = data.generated_text;
     } else {
-        // Əgər cavabın içində generated_text yoxdursa
-        aiReply = JSON.stringify(data);
+        aiReply = "Anlaşılmaz cavab alındı.";
     }
 
+    // İstifadəçiyə cavabı göndəririk
     return res.status(200).json({ reply: aiReply });
 
   } catch (error) {
