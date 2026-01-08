@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     // SEÇİLƏN MODEL: Qwen 2.5 (Çox güclüdür və lisenziya təsdiqi tələb etmir)
     // Bu URL standartdır və pulsuz hesablarla işləyir.
-    const API_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct";
+    const API_URL = "https://router.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct";
     
     const response = await fetch(API_URL, {
       headers: { 
@@ -56,3 +56,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server kodu xətası: " + error.message });
   }
 }
+
