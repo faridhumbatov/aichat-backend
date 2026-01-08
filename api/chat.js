@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const { message } = req.body;
 
   try {
-    const response = await fetch("https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct", {
+    const response = await fetch("https://router.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct", {
       headers: { 
         Authorization: `Bearer ${process.env.HF_TOKEN}`,
         "Content-Type": "application/json" 
@@ -40,3 +40,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server xətası: " + error.message });
   }
 }
+
