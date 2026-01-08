@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // CORS ayarları
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -8,36 +9,46 @@ export default async function handler(req, res) {
   const { message } = req.body;
 
   try {
-    const response = await fetch("https://router.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct", {
+    // DOĞRU URL: Birbaşa modelin API nöqtəsi
+    const API_URL = "https://router.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B-Instruct";
+    
+    const response = await fetch(API_URL, {
       headers: { 
-        Authorization: `Bearer ${process.env.HF_TOKEN}`,
+        Authorization: `Bearer ${process.env.HF_TOKEN}`, // Vercel-də HF_TOKEN olduğundan əmin olun
         "Content-Type": "application/json" 
       },
       method: "POST",
       body: JSON.stringify({
-        inputs: `<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n${message}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n`,
-        parameters: { max_new_tokens: 500, return_full_text: false },
-        options: { wait_for_model: true } // Model yüklənməyibsə, gözləməsini təmin edir
+        inputs: message,
+        parameters: { 
+          max_new_tokens: 500,
+          return_full_text: false 
+        },
+        options: { 
+          wait_for_model: true // Model yüklənirsə xəta vermə, gözlə
+        }
       }),
     });
 
-    const data = await response.json();
-    console.log("HF Data:", data); // Vercel loglarında görmək üçün
-
-    // Cavabın formatını yoxlayırıq
-    let aiResponse = "";
-    if (Array.isArray(data) && data[0].generated_text) {
-      aiResponse = data[0].generated_text;
-    } else if (data.error) {
-      return res.status(500).json({ error: "HF Xətası: " + data.error });
-    } else {
-      return res.status(500).json({ error: "Gözlənilməyən cavab formatı", details: data });
+    // Əgər cavab JSON deyilsə tutaq
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        return res.status(500).json({ error: "API-dən qeyri-JSON cavab gəldi", details: text });
     }
 
-    return res.status(200).json({ reply: aiResponse });
+    const data = await response.json();
+
+    if (data.error) {
+        return res.status(500).json({ error: "HF Xətası: " + data.error });
+    }
+
+    // Llama modelləri adətən massiv qaytarır
+    const aiResponse = Array.isArray(data) ? data[0].generated_text : data.generated_text;
+
+    return res.status(200).json({ reply: aiResponse || "Cavab boşdur" });
 
   } catch (error) {
-    return res.status(500).json({ error: "Server xətası: " + error.message });
+    return res.status(500).json({ error: "Server daxili xətası: " + error.message });
   }
 }
-
