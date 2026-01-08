@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
   try {
     // MODELLƏR: "meta-llama/Llama-3.2-1B-Instruct" və ya "mistralai/Mistral-7B-Instruct-v0.3"
-    const response = await fetch("https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-1B-Instruct", {
+    const response = await fetch("https://router.huggingface.co/models/meta-llama/Llama-3.2-1B-Instruct", {
       headers: { 
         "Authorization": `Bearer ${process.env.HF_TOKEN}`,
         "Content-Type": "application/json" 
@@ -41,3 +41,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server xətası: " + error.message });
   }
 }
+
